@@ -1,0 +1,469 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <style>
+
+
+        .box {
+            border: solid #ffffff;
+            width: 1000px;
+            height: 700px;
+            cursor: no-drop;
+        }
+
+
+
+        .center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+
+
+
+        .load {
+            cursor: pointer;
+        }
+
+        .wall {
+            border-left: solid #fbf600 2px;
+            position: absolute;
+        }
+
+          .wall2 {
+            border-left: solid #07f3cf 2px;
+            position: absolute;
+        }
+
+        .wallH {
+            border-top: solid #fbf600 2px;
+            position: absolute;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            opacity: .5;
+            z-index: 1;
+        }
+
+        .modal {
+            z-index: 2;
+        }
+
+        .controls {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            font-family: Arial, sans-serif;
+            border-radius: 10px;
+            z-index: 999;
+        }
+
+        .controls h3 {
+            margin-top: 0;
+            text-align: center;
+            color: #fbf600;
+        }
+
+        .controls ul {
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        .controls li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .key {
+            color: #07f3cf;
+            font-weight: bold;
+        }
+
+    </style>
+    <title>Maze game</title>
+    <style>
+        .square {
+            width: 150px;
+            height: 150px;
+            background-color: #fbf600;
+            position: absolute;
+        }
+
+        .ramp {
+            width: 95px;
+            height: 160px;
+            background-color: #000000;
+            position: absolute;
+        }
+    </style>
+</head>
+
+
+
+<body style="background-color: #0338a5">
+    <div id="audio"></div>
+
+    <div class='wrapper center' id="mee">
+
+        <div class="box" id="main" style="position: relative;">
+            <img id="ball" style="position: absolute;z-index: 100; top: 269px ; left: 482px" height="20" width="20" src="https://lib-holder.netlify.app/pacman-transparent-gif-6.gif" />
+            <img id="monster" style="position: absolute;z-index:99;top: 244px; left: 445px;" height="20" width="20" src="https://lib-holder.netlify.app/giphy.gif" />
+            <img id="target" style="position: absolute;z-index: 98; top: 30px ; left: 943px" height="20" width="20" src="https://lib-holder.netlify.app/target.png" />
+            <div class="wall" id="wall1" style="width: 0; height: 576px; top: 120px; left: 130px;"></div>
+            <div class="wall" id="wall2" style="width: 0; height: 585px; top: 0; left: 300px;"></div>
+            <div class="wall2" id="wall5" style="width: 0; height: 40px; top: 60%; left: 700px;"></div>
+            <div class="wallH" id="wall3" style="width: 460px; height: 0; top: 300px; left: 0;"></div>
+            <div class="wallH" id="wall4" style="width: 120px; height: 0; top: 550px; left: 470px"></div>
+            <div class="square" id="square" style="top: 500px; left: 588px;"></div>
+            <div class="ramp" id="ramp" style="top: 0; left: 899px; z-index: 50;"></div>
+            <img id="lava" src="https://lib-holder.netlify.app/lava.gif" style="position: absolute; top: 0; left: 694px;" width="300" height="400" />
+            <img id="raft" src="https://lib-holder.netlify.app/transparentRaft.png" style="position: absolute; top: 600px; left: 800px;" width="100" height="70" />
+        </div>
+
+        <fieldset id="dead" style="display: none">
+            <h1 style="color:red">DEAD.</h1>
+            <h4 style="color: red">All progress will be lost :(</h4>
+            <button onclick="replay()">Replay</button>
+        </fieldset>
+
+
+
+    </div>
+
+     <div class="controls" id="control">
+        <h3>Controls</h3>
+            <ul>
+                <span class="key">↑</span> Move Up<br>
+                <span class="key">↓</span> Move Down<br>
+                <span class="key">←</span> Move Left<br>
+                <span class="key">→</span> Move Right<br>
+                <span class="key">Space</span> Stop<br>
+                <span class="key">Left Shift</span> Use Raft<br>
+                <span class="key">P</span> Pause<br>
+                <span class="key">Esc</span> Toggle Monster Targeting<br>
+            </ul>
+        </div>
+
+    <script src="https://lib-holder.netlify.app/Collision_Library%20-%20Main.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+
+
+        document.getElementById("ball").style.transform = "rotate(-90deg)";
+        var ballTop = 660;
+        var ballLeft = 50;
+        var horizontalDirection = 0;
+        var verticalDirection = 0;
+        var inRaft = false;
+        var pause = false;
+
+
+
+        function landmine() {
+            if (ballTop == "102") {
+                if (ballLeft == "897") {
+                    $("#dead").show();
+                    $("#main").hide();
+                }
+            }
+            window.setTimeout(landmine, 1);
+        }
+
+
+
+        window.setTimeout(landmine, 1);
+
+        if (!pause) {
+
+            function moveThings() {
+                moveBall();
+                moveMonster();
+            }
+        }
+
+        var monsterVertical = 1;
+        var monsterHorizontal = 1;
+        var monsterStep = 0;
+    var skipTargeting = false;
+    var isDead = false;
+
+        function moveMonster() {
+            monsterStep++;
+            if (monsterStep < 3) {
+                return;
+            }
+
+            monsterStep = 0;
+
+            var monsterTop = parseInt(document.getElementById("monster").style.top, 10);
+
+            if (!skipTargeting) {
+                // Target the ball
+                if (ballTop > monsterTop) {
+                    monsterVertical = 1;
+                }
+                else {
+                    monsterVertical = -1;
+                }
+            }
+
+            monsterTop += monsterVertical;
+
+            if (monsterTop < 0) {
+                monsterTop = 0;
+                monsterVertical = 1;
+            }
+            if (monsterTop > 680) {
+                monsterTop = 680;
+                monsterVertical = -1;
+            }
+            document.getElementById("monster").style.top = monsterTop + "px";
+
+            // Avoid lava
+            if (crash("monster", "lava")) {
+                monsterVertical = 0;
+                monsterTop++;
+                document.getElementById("monster").style.top = monsterTop + "px";
+            }
+
+            var monsterLeft = parseInt(document.getElementById("monster").style.left);
+
+            if (!skipTargeting) {
+                // Target the ball
+                if (ballLeft > monsterLeft) {
+                    monsterHorizontal = 1;
+                }
+                else {
+                    monsterHorizontal = -1;
+                }
+            }
+
+            monsterLeft += monsterHorizontal;
+
+            if (monsterLeft < 0) {
+                monsterLeft = 0;
+                monsterHorizontal = 1;
+            }
+            if (monsterLeft > 980) {
+                monsterLeft = 980;
+                monsterHorizontal = -1;
+            }
+            document.getElementById("monster").style.left = monsterLeft + "px";
+
+            // Avoid lava
+            if (crash("monster", "lava")) {
+                monsterHorizontal = 0;
+                monsterLeft--;
+                document.getElementById("monster").style.left = monsterLeft + "px";
+            }
+        }
+
+        function moveBall() {
+            ballTop += verticalDirection;
+            if (ballTop > 680) {
+                kill();
+            }
+            if (ballTop < 0) {
+                kill();
+            }
+
+            ballLeft += horizontalDirection;
+            if (ballLeft > 980) {
+                kill();
+            }
+            if (ballLeft < 0) {
+                kill();
+            }
+
+
+
+            // check collision
+
+            if (!inRaft) {
+                if (!crash("ball", "ramp")) {
+
+                    if (crash("ball", "wall2")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "wall1")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "wall5")) {
+                        //stop
+                        verticalDirection = 0;
+                        horizontalDirection = 0;
+                    }
+
+                    if (crash("ball", "wall3")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "monster")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "square")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "wall4")) {
+                        kill();
+                    }
+
+                    if (crash("ball", "lava")) {
+                        kill();
+                    }
+                }
+            }
+
+            if (!isDead && crash("ball", "target")) {
+
+                alert("Good job. \n You did it!");
+
+            }
+
+
+            document.getElementById("ball").style.top = ballTop + "px";
+            document.getElementById("ball").style.left = ballLeft + "px";
+
+            if (!pause) {
+
+
+
+                $('#wall2').animate({ "top": "+=100px" }, 1000, "linear");
+                $('#wall2').animate({ "top": "-=100px" }, 1000, "linear");
+
+                $('#wall3').animate({ "left": "+=200px" }, 1000, "linear");
+                $('#wall3').animate({ "left": "-=200px" }, 1000, "linear");
+
+                $('#wall4').animate({ "left": "-=190px" }, 1000, "linear");
+                $('#wall4').animate({ "left": "+=190px" }, 1000, "linear");
+
+                $('#wall5').animate({ "top": "+=50px" }, 1000, "linear");
+                $('#wall5').animate({ "top": "-=50px" }, 1000, "linear");
+
+            }
+
+
+
+            window.setTimeout(moveThings, "1");
+        }
+
+        function replay() {
+            location.reload();
+        }
+
+
+
+        moveThings();
+
+        function kill() {
+            $("#dead").show();
+            $("#main").hide();
+            $("#control").hide();
+            ballTop = "269";
+            ballLeft = "482";
+            isDead = true;
+        }
+
+        if (!pause) {
+
+            $(document).keydown(function (e) {
+                var keycode = (e.keyCode ? e.keyCode : e.which);
+
+                if (keycode == '38') {
+                    //up
+                    document.getElementById("ball").style.transform = "rotate(0deg)";
+                    document.getElementById("ball").style.transform = "rotate(-90deg)";
+                    verticalDirection = -1;
+                    horizontalDirection = 0;
+                    e.preventDefault();
+                }
+
+                if (keycode == '40') {
+                    //down
+                    document.getElementById("ball").style.transform = "rotate(0deg)";
+                    document.getElementById("ball").style.transform = "rotate(90deg)";
+                    verticalDirection = 1;
+                    horizontalDirection = 0;
+                    e.preventDefault();
+                }
+
+                if (keycode == '37') {
+                    //left <--
+                    document.getElementById("ball").style.transform = "rotate(0deg)";
+                    document.getElementById("ball").style.transform = "rotate(180deg)";
+                    horizontalDirection = -1;
+                    verticalDirection = 0;
+                    e.preventDefault();
+                }
+
+                if (keycode == '39') {
+                    //right -->
+                    document.getElementById("ball").style.transform = "rotate(0deg)";
+                    horizontalDirection = 1;
+                    verticalDirection = 0;
+                    e.preventDefault();
+                }
+
+                if (keycode == '32') {
+                    //stop
+                    verticalDirection = 0;
+                    horizontalDirection = 0;
+                    e.preventDefault();
+                }
+
+                if (keycode == '16') {
+                    //get on raft
+                    if (crash("ball", "raft")) {
+                        inRaft = true;
+                        document.getElementById("ball").style.top = "616px";
+                        document.getElementById("ball").style.left = "833px";
+                        ballTop = 616;
+                        ballLeft = 833;
+                        var ball = $('#ball');
+                        $('#raft').animate({ "top": "-=520px" }, 3000, "linear");
+                        ball.animate({ "top": "-=520px" }, 3000, "linear", complete = function () {
+                            ballTop -= 520;
+                            ballLeft += 100;
+                            ball.animate({ "top": "auto", "left": "+=100px" }, 1000, complete = function () {
+                                inRaft = false;
+                            });
+                        });
+                    }
+                }
+
+                if (keycode == '80') {
+                    //Pause
+                    alert("Paused. \n When you press OK the game will resume.");
+                }
+
+                if (keycode == '27') {
+                    skipTargeting = !skipTargeting;
+                }
+
+            });
+        }
+
+
+    </script>
+
+</body>
+
+</html>
