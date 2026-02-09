@@ -1,2 +1,3 @@
-# lavaGame
-A simple lava game
+# Lava Game
+A simple game<br>
+Just download and run the index.html file in your browser
